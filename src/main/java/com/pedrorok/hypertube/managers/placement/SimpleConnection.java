@@ -3,9 +3,9 @@ package com.pedrorok.hypertube.managers.placement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 
 public record SimpleConnection(BlockPos pos, Direction direction) {
     public static final Codec<SimpleConnection> CODEC = RecordCodecBuilder.create(i -> i.group(
