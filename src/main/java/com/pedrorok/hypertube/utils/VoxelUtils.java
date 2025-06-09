@@ -1,7 +1,7 @@
 package com.pedrorok.hypertube.utils;
 
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 21/04/2025
@@ -11,18 +11,18 @@ public class VoxelUtils {
 
     public static VoxelShape combine(VoxelShape... shapes) {
         if (shapes.length == 0) {
-            return Shapes.empty();
+            return VoxelShapes.empty();
         }
         VoxelShape combined = shapes[0];
 
         for (int i = 1; i < shapes.length; i++) {
-            combined = Shapes.or(combined, shapes[i]);
+            combined = VoxelShapes.union(combined, shapes[i]);
         }
 
         return combined;
     }
 
     public static VoxelShape empty() {
-        return Shapes.empty();
+        return VoxelShapes.empty();
     }
 }
