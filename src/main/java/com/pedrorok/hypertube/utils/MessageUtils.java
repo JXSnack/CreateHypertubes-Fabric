@@ -1,10 +1,10 @@
 package com.pedrorok.hypertube.utils;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.text.Text;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 27/05/2025
@@ -12,12 +12,12 @@ import net.neoforged.api.distmarker.OnlyIn;
  */
 public class MessageUtils {
 
-    public static void sendActionMessage(Player player, String message) {
-        player.displayClientMessage(Component.literal(message), true);
+    public static void sendActionMessage(PlayerEntity player, String message) {
+        player.sendMessage(Text.literal(message), true);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static void sendClientActionMessage(String message) {
-        sendActionMessage(Minecraft.getInstance().player, message);
+        sendActionMessage(MinecraftClient.getInstance().player, message);
     }
 }
