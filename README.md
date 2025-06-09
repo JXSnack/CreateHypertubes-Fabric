@@ -1,12 +1,13 @@
 <p align="center"><img src="./src/main/resources/icon.png" alt="Logo"></p>
-<h1 align="center">Create: Hypertubes<br/>
+<h1 align="center">Create: Hypertubes [Fabric]<br/>
 
-<a href="https://www.curseforge.com/minecraft/mc-mods/hypertubes"><img alt="CurseForge Page" src="https://img.shields.io/badge/Hypertubes-Curse_Forge?logo=CurseForge&label=Curse%20Forge&color=%23F16436"></a>
-<a href="https://modrinth.com/mod/hypertube"><img alt="Modrinth Page" src="https://img.shields.io/badge/Hypertubes-Modrinth?logo=modrinth&label=Modrinth&color=%2300AF5C"></a>
+<a href="https://modrinth.com/mod/hypertubes-fabric"><img alt="Modrinth Page" src="https://img.shields.io/badge/Hypertubes-Modrinth?logo=modrinth&label=Modrinth&color=%2300AF5C"></a>
 </h1>
 
 > [!IMPORTANT]
-> This mod is currently in active development. Features may change, and bugs are expected. [Please report any issues](https://github.com/PedroRok/CreateHypertubes/issues)!
+> This is a community-made port for Create: Hypertubes made with permission of the original creator. If you are looking for the Forge version, [click here](https://github.com/PedroRok/CreateHypertubes)
+> 
+> This mod is currently in active development. Features may change, and bugs are expected. [Please report any issues](https://github.com/JXSnack/CreateHypertubes-Fabric/issues)!
 
 ### Welcome to Create: Hypertubes!
 
