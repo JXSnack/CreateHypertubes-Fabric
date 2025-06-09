@@ -1,4 +1,4 @@
-<p align="center"><img src="./src/main/resources/icon.png" alt="Logo"></p>
+<p align="center"><img src="./src/main/resources/assets/create_hypertube/icon.png" alt="Logo"></p>
 <h1 align="center">Create: Hypertubes [Fabric]<br/>
 
 <a href="https://modrinth.com/mod/hypertubes-fabric"><img alt="Modrinth Page" src="https://img.shields.io/badge/Hypertubes-Modrinth?logo=modrinth&label=Modrinth&color=%2300AF5C"></a>
