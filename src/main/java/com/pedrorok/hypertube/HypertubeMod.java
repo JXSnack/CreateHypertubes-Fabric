@@ -3,6 +3,7 @@ package com.pedrorok.hypertube;
 import com.pedrorok.hypertube.config.ClientConfig;
 import com.pedrorok.hypertube.registry.*;
 import com.simibubi.create.foundation.data.CreateRegistrate;
+import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.neoforged.bus.api.IEventBus;
@@ -17,19 +18,15 @@ import org.apache.logging.log4j.Logger;
  * @author Rok, Pedro Lucas nmm. Created on 17/04/2025
  * @project Create Hypertube
  */
-@Mod(HypertubeMod.MOD_ID)
-public class HypertubeMod {
+public class HypertubeMod implements ModInitializer {
     public static final String MOD_ID = "create_hypertube";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(HypertubeMod.MOD_ID)
             .defaultCreativeTab((ResourceKey<CreativeModeTab>) null);
 
-    public HypertubeMod(IEventBus modEventBus, ModContainer modContainer) {
-        modEventBus.addListener(this::commonSetup);
-
+    public void onInitialize() {
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MOD_ID + "-client.toml");
-
         REGISTRATE.registerEventListeners(modEventBus);
 
         ModPartialModels.init();
@@ -37,14 +34,10 @@ public class HypertubeMod {
         ModBlocks.register();
         ModBlockEntities.register();
 
-        ModCreativeTab.register(modEventBus);
-        ModDataComponent.register(modEventBus);
+        ModCreativeTab.register();
+        ModDataComponent.register();
 
-        ModSounds.register(modEventBus);
-    }
-
-    private void commonSetup(final FMLCommonSetupEvent event) {
-
+        ModSounds.register();
     }
 
     public static CreateRegistrate get() {
