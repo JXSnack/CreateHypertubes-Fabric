@@ -4,13 +4,8 @@ import com.pedrorok.hypertube.config.ClientConfig;
 import com.pedrorok.hypertube.registry.*;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.CreativeModeTab;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraft.item.ItemGroup; // CreativeModeTab
+import net.minecraft.registry.RegistryKey; // ResourceKey
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,8 +17,8 @@ public class HypertubeMod implements ModInitializer {
     public static final String MOD_ID = "create_hypertube";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
-    public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(HypertubeMod.MOD_ID)
-            .defaultCreativeTab((ResourceKey<CreativeModeTab>) null);
+    public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID)
+            .defaultCreativeTab((RegistryKey<ItemGroup>) null);
 
     public void onInitialize() {
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MOD_ID + "-client.toml");
