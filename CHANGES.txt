@@ -1,3 +1,5 @@
 All changes regarding the Forge version of the mod should be documented here.
 
 - build.gradle has been rewritten entirely
+- gradlew & gradlew.bat have been replaced with their counterparts of the fabric-create-addon-template (Fabricators-of-Create)
+- settings.gradle has been rewritten entirely
