@@ -9,6 +9,9 @@
 > 
 > This mod is currently in active development. Features may change, and bugs are expected. [Please report any issues](https://github.com/JXSnack/CreateHypertubes-Fabric/issues)!
 
+> [!NOTE]
+> For the time being, since Create 0.6 for Fabric isn't out yet, we'll write all changes into the CHANGES.txt file. These should be applied once this version is ready to be used.
+
 ### Welcome to Create: Hypertubes!
 
 Ever wanted to build a transportation network in Minecraft like in _Satisfactory_? Create: Hypertubes is an addon for the Create mod inspired in _Satisfactory Hypertubes_, allowing you to construct intricate and seamless tube systems for moving players with ease. Hypertubes offers a new way to travel in your Minecraft world.
