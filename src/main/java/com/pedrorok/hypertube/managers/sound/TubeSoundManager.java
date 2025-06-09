@@ -1,11 +1,11 @@
 package com.pedrorok.hypertube.managers.sound;
 
 import com.pedrorok.hypertube.registry.ModSounds;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,7 @@ import java.util.UUID;
  * @author Rok, Pedro Lucas nmm. Created on 04/06/2025
  * @project Create Hypertube
  */
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class TubeSoundManager {
 
     private static final Map<UUID, TubeAmbientSound> ambientSounds = new HashMap<>();
@@ -40,8 +40,8 @@ public class TubeSoundManager {
 
         private TubeSound travelSound;
 
-        public void enableClientPlayerSound(Entity e, Vec3 normal, double distance, boolean isOpen) {
-            if (e != Minecraft.getInstance()
+        public void enableClientPlayerSound(Entity e, Vec3d normal, double distance, boolean isOpen) {
+            if (e != MinecraftClient.getInstance()
                     .getCameraEntity())
                 return;
 
@@ -55,14 +55,15 @@ public class TubeSoundManager {
             float pitch = isOpen ? 1.5f : 0.5f;
             float maxVolume = Math.max(0, (float) (1.0 - (distance / 48)));
 
-            if (travelSound == null || travelSound.isStopped()) {
-                travelSound = new TubeSound(ModSounds.TRAVELING.get(), pitch);
-                Minecraft.getInstance()
+            if (travelSound == null || travelSound.isDone()) {
+                travelSound = new TubeSound(ModSounds.TRAVELING, pitch);
+                MinecraftClient.getInstance()
                         .getSoundManager()
                         .play(travelSound);
             }
             travelSound.updateLocation(normal);
-            travelSound.setPitch(pitch);
+            // TODO: [PORT] Temporary solution
+            // travelSound.setPitch(pitch);
             travelSound.fadeIn(maxVolume);
         }
 
@@ -89,19 +90,20 @@ public class TubeSoundManager {
         private static TubeSound travelSound;
 
         public static void enableClientPlayerSound(Entity e, float maxVolume, float pitch) {
-            if (e != Minecraft.getInstance()
+            if (e != MinecraftClient.getInstance()
                     .getCameraEntity())
                 return;
 
             isClientPlayerInTravel = true;
 
-            if (travelSound == null || travelSound.isStopped()) {
-                travelSound = new TubeSound(ModSounds.TRAVELING.get(), pitch);
-                Minecraft.getInstance()
+            if (travelSound == null || travelSound.isDone()) {
+                travelSound = new TubeSound(ModSounds.TRAVELING, pitch);
+                MinecraftClient.getInstance()
                         .getSoundManager()
                         .play(travelSound);
             }
-            travelSound.setPitch(pitch);
+            // TODO: [PORT] Temporary solution
+            // travelSound.setPitch(pitch);
             travelSound.fadeIn(maxVolume);
         }
 
