@@ -1,5 +1,21 @@
 All changes regarding the Forge version of the mod should be documented here.
 
+# General port changes
 - build.gradle has been rewritten entirely
 - gradlew & gradlew.bat have been replaced with their counterparts of the fabric-create-addon-template (Fabricators-of-Create)
 - settings.gradle has been rewritten entirely
+- gradle.properties has been rewritten entirely
+- gradle/wrapper/gradle-wrapper.jar and its properties file have been replaced with the fabric addon template one's
+
+## Smaller changes
+- create_hypertube.mixins.json
+    - compatibility level JAVA_8 -> JAVA_17
+    - removed refmap key
+- moved icon.png from assets to assets/create_hypertube
+
+## Additions
+- fabric.mod.json
+
+# Create 0.6 -> 0.5 changes
+- Minecraft version 1.21.1 -> 1.20.1 (gradle.properties)
+-
