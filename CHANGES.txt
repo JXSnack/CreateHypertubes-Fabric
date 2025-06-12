@@ -12,6 +12,8 @@ or file rewrites.
 # Additions
 - Added fabric.mod.json
 - Added HypertubeMod.id(String) for convenience
+- Added PlayerEntityRendererMixin to emulate the forge PlayerRenderEvent.Pre and Post
+- Added HypertubeModClient to handle Fabric client stuff
 
 # Refactors
 - Moved icon file into the mod's specific assets for better compatibility
