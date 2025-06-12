@@ -8,24 +8,23 @@ import com.pedrorok.hypertube.managers.placement.TubePlacement;
 import com.pedrorok.hypertube.registry.ModBlockEntities;
 import com.pedrorok.hypertube.registry.ModDataComponent;
 import com.pedrorok.hypertube.utils.MessageUtils;
-import com.simibubi.create.foundation.utility.animation.LerpedFloat;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUsageContext;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldAccess;
 
 import java.util.Optional;
 
@@ -34,51 +33,51 @@ import java.util.Optional;
  * @project Create Hypertube
  */
 public class HypertubeItem extends BlockItem {
-    public HypertubeItem(Block pBlock, Properties pProperties) {
+    public HypertubeItem(Block pBlock, Settings pProperties) {
         super(pBlock, pProperties);
     }
 
     @Override
-    public InteractionResult useOn(UseOnContext pContext) {
-        ItemStack stack = pContext.getItemInHand();
-        BlockPos pos = pContext.getClickedPos();
-        Level level = pContext.getLevel();
+    public ActionResult useOnBlock(ItemUsageContext pContext) {
+        ItemStack stack = pContext.getStack();
+        BlockPos pos = pContext.getBlockPos();
+        World level = pContext.getWorld();
         BlockState state = level.getBlockState(pos);
-        Player player = pContext.getPlayer();
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        PlayerEntity player = pContext.getPlayer();
+        if (level.isClient) return ActionResult.SUCCESS;
 
         if (player == null)
-            return super.useOn(pContext);
-        if (pContext.getHand() == InteractionHand.OFF_HAND)
-            return super.useOn(pContext);
-        if (player.isShiftKeyDown() && !isFoil(stack))
-            return super.useOn(pContext);
+            return super.useOnBlock(pContext);
+        if (pContext.getHand() == Hand.OFF_HAND)
+            return super.useOnBlock(pContext);
+        if (player.isSneaking() && !hasGlint(stack))
+            return super.useOnBlock(pContext);
 
-        Direction direction = pContext.getClickedFace();
+        Direction direction = pContext.getSide();
 
         MessageUtils.sendActionMessage(player, "");
-        if (!isFoil(stack)) {
+        if (!hasGlint(stack)) {
             ResponseDTO select = select(level, pos, direction, stack);
             if (select.valid()) {
-                level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 0.75f, 1);
-                return InteractionResult.SUCCESS;
+                level.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 0.75f, 1);
+                return ActionResult.SUCCESS;
             }
             if (!select.errorMessage().isEmpty()) {
                 MessageUtils.sendActionMessage(player, select.getMessageComponent());
             }
-            return super.useOn(pContext);
+            return super.useOnBlock(pContext);
         }
 
         SimpleConnection simpleConnection = ModDataComponent.decodeSimpleConnection(stack);
-        if (player.isShiftKeyDown() && simpleConnection.pos().equals(pos)) {
-            MessageUtils.sendActionMessage(player, Component.translatable("placement.create_hypertube.conn_cleared").withStyle(ChatFormatting.YELLOW));
+        if (player.isSneaking() && simpleConnection.pos().equals(pos)) {
+            MessageUtils.sendActionMessage(player, Text.translatable("placement.create_hypertube.conn_cleared").styled(style -> style.withColor(Formatting.YELLOW)));
             clearConnection(stack);
-            return InteractionResult.SUCCESS;
+            return ActionResult.SUCCESS;
         }
 
         if (simpleConnection.pos().equals(pos)) {
-            player.playSound(SoundEvents.ITEM_FRAME_REMOVE_ITEM, 1.0f, 1.0f);
-            return InteractionResult.FAIL;
+            player.playSound(SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM, 1.0f, 1.0f);
+            return ActionResult.FAIL;
         }
 
         boolean isHypertubeClicked = (state.getBlock() instanceof HypertubeBlock);
@@ -89,20 +88,20 @@ public class HypertubeItem extends BlockItem {
             if (blockEntity.isPresent()) {
                 success = TubePlacement.handleHypertubeClicked(blockEntity.get(), player, simpleConnection, pos, direction, level, stack);
             }
-            SoundType soundtype = state.getSoundType();
+            BlockSoundGroup soundtype = state.getSoundGroup();
             if (success) {
-                level.playSound(null, pos, soundtype.getPlaceSound(), SoundSource.BLOCKS,
+                level.playSound(null, pos, soundtype.getPlaceSound(), SoundCategory.BLOCKS,
                         (soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
             } else {
-                level.playSound(player, pos, SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS,
+                level.playSound(player, pos, SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), SoundCategory.BLOCKS,
                         1, 0.5f);
             }
         }
 
-        return isHypertubeClicked ? InteractionResult.FAIL : super.useOn(pContext);
+        return isHypertubeClicked ? ActionResult.FAIL : super.useOnBlock(pContext);
     }
 
-    public static ResponseDTO select(LevelAccessor world, BlockPos pos, Direction direction, ItemStack heldItem) {
+    public static ResponseDTO select(WorldAccess world, BlockPos pos, Direction direction, ItemStack heldItem) {
         BlockState blockState = world.getBlockState(pos);
         Block block = blockState.getBlock();
         if (!(block instanceof HypertubeBlock tube))
@@ -116,17 +115,17 @@ public class HypertubeItem extends BlockItem {
         }
 
         ModDataComponent.encodeSimpleConnection(pos, direction, heldItem);
-        heldItem.getTag().putBoolean("foil", true);
+        heldItem.getNbt().putBoolean("foil", true);
         return ResponseDTO.get(true);
     }
 
     public static void clearConnection(ItemStack stack) {
         ModDataComponent.removeSimpleConnection(stack);
-        stack.getTag().remove("foil");
+        stack.getNbt().remove("foil");
     }
 
     @Override
-    public boolean isFoil(ItemStack stack) {
-        return stack.getTag() != null && (stack.getTag().contains("foil") || stack.isEnchanted());
+    public boolean hasGlint(ItemStack stack) {
+        return stack.getNbt() != null && (stack.getNbt().contains("foil") || stack.hasEnchantments());
     }
 }
