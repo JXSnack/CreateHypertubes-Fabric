@@ -77,12 +77,14 @@ processResources {
     // require dependencies to be the version compiled against or newer
     Map<String, Object> properties = [
             "version": version,
-            "fabric_loader_version": fabric_loader_version,
+            "fabric_loader_version": loader_version,
             "fabric_api_version": fabric_api_version,
             "create_version": create_version,
             "minecraft_version": minecraft_version,
             "mod_id": mod_id,
-            "mod_authors": mod_authors
+            "mod_authors": mod_authors,
+            "mod_license": mod_license,
+            "mod_version_range": minecraft_version_range
     ]
 
     inputs.properties(properties)
