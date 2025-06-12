@@ -1,9 +1,9 @@
 package com.pedrorok.hypertube.mixin;
 
 import com.pedrorok.hypertube.managers.TravelManager;
-import net.minecraft.client.model.PlayerModel;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.client.render.entity.model.PlayerEntityModel;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,65 +13,65 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * @author Rok, Pedro Lucas nmm. Created on 23/05/2025
  * @project Create Hypertube
  */
-@Mixin(value = PlayerModel.class, priority = 1001)
+@Mixin(value = PlayerEntityModel.class, priority = 1001)
 public abstract class PlayerModelMixin {
 
-    @Inject(method = "setupAnim*", at = @At("RETURN"))
+    @Inject(method = "setAngles*", at = @At("RETURN"))
     private void onSetupAnim(LivingEntity entity, float limbSwing, float limbSwingAmount,
                              float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
-        if (!(entity instanceof Player player)
+        if (!(entity instanceof PlayerEntity player)
             || !player.getPersistentData().getBoolean(TravelManager.TRAVEL_TAG)) return;
 
 
-        PlayerModel<?> model = (PlayerModel<?>) (Object) this;
+        PlayerEntityModel<?> model = (PlayerEntityModel<?>) (Object) this;
 
-        model.rightArm.xRot = 0;
-        model.rightArm.yRot = 0;
-        model.rightArm.zRot = 0;
+        model.rightArm.pitch = 0;
+        model.rightArm.yaw = 0;
+        model.rightArm.roll = 0;
 
-        model.rightSleeve.xRot = 0;
-        model.rightSleeve.yRot = 0;
-        model.rightSleeve.zRot = 0;
+        model.rightSleeve.pitch = 0;
+        model.rightSleeve.yaw = 0;
+        model.rightSleeve.roll = 0;
 
 
-        model.leftArm.xRot = 0;
-        model.leftArm.yRot = 0;
-        model.leftArm.zRot = 0;
+        model.leftArm.pitch = 0;
+        model.leftArm.yaw = 0;
+        model.leftArm.roll = 0;
 
-        model.leftSleeve.xRot = 0;
-        model.leftSleeve.yRot = 0;
-        model.leftSleeve.zRot = 0;
+        model.leftSleeve.pitch = 0;
+        model.leftSleeve.yaw = 0;
+        model.leftSleeve.roll = 0;
 
-        model.rightLeg.xRot = 0;
-        model.rightLeg.yRot = 0;
-        model.rightLeg.zRot = 0;
+        model.rightLeg.pitch = 0;
+        model.rightLeg.yaw = 0;
+        model.rightLeg.roll = 0;
 
-        model.rightPants.xRot = 0;
-        model.rightPants.yRot = 0;
-        model.rightPants.zRot = 0;
+        model.rightPants.pitch = 0;
+        model.rightPants.yaw = 0;
+        model.rightPants.roll = 0;
 
-        model.leftLeg.xRot = 0;
-        model.leftLeg.yRot = 0;
-        model.leftLeg.zRot = 0;
+        model.leftLeg.pitch = 0;
+        model.leftLeg.yaw = 0;
+        model.leftLeg.roll = 0;
 
-        model.leftPants.xRot = 0;
-        model.leftPants.yRot = 0;
-        model.leftPants.zRot = 0;
+        model.leftPants.pitch = 0;
+        model.leftPants.yaw = 0;
+        model.leftPants.roll = 0;
 
-        model.body.xRot = 0;
-        model.body.yRot = 0;
-        model.body.zRot = 0;
+        model.body.pitch = 0;
+        model.body.yaw = 0;
+        model.body.roll = 0;
 
-        model.head.xRot = -1.2F;
-        model.head.yRot = 0;
-        model.head.zRot = 0;
+        model.head.pitch = -1.2F;
+        model.head.yaw = 0;
+        model.head.roll = 0;
 
-        model.hat.xRot = -1.2F;
-        model.hat.yRot = 0;
-        model.hat.zRot = 0;
+        model.hat.pitch = -1.2F;
+        model.hat.yaw = 0;
+        model.hat.roll = 0;
 
-        model.jacket.xRot = 0;
-        model.jacket.yRot = 0;
-        model.jacket.zRot = 0;
+        model.jacket.pitch = 0;
+        model.jacket.yaw = 0;
+        model.jacket.roll = 0;
     }
 }
