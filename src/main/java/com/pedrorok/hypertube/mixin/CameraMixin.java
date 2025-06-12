@@ -3,15 +3,15 @@ package com.pedrorok.hypertube.mixin;
 import com.pedrorok.hypertube.camera.DetachedCameraController;
 import com.pedrorok.hypertube.config.ClientConfig;
 import com.pedrorok.hypertube.managers.TravelManager;
-import net.minecraft.client.Camera;
-import net.minecraft.client.CameraType;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.GameOptions;
+import net.minecraft.client.option.Perspective;
+import net.minecraft.client.render.Camera;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.BlockView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -27,33 +27,33 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class CameraMixin {
 
     @Shadow
-    private boolean detached;
+    private boolean thirdPerson;
 
-    @Shadow private Entity entity;
+    @Shadow private Entity focusedEntity;
 
     @Unique
     public void createHypertube$setDetachedExternal(boolean newDetached) {
-        this.detached = newDetached;
+        this.thirdPerson = newDetached;
     }
 
-    @Inject(method = "setup", at = @At("HEAD"), cancellable = true)
-    private void onSetup(BlockGetter p_90576_, Entity renderViewEntity, boolean isFrontView, boolean flipped, float PartialTicks, CallbackInfo ci) {
-        Options options = Minecraft.getInstance().options;
-        Player player = Minecraft.getInstance().player;
+    @Inject(method = "update", at = @At("HEAD"), cancellable = true)
+    private void onSetup(BlockView p_90576_, Entity renderViewEntity, boolean isFrontView, boolean flipped, float PartialTicks, CallbackInfo ci) {
+        GameOptions options = MinecraftClient.getInstance().options;
+        PlayerEntity player = MinecraftClient.getInstance().player;
         if (renderViewEntity != player) return;
         if (!TravelManager.hasHyperTubeData(renderViewEntity) || (
-                options.getCameraType().isFirstPerson() && ClientConfig.get().ALLOW_FPV_INSIDE_TUBE.get())) {
+                options.getPerspective().isFirstPerson() && ClientConfig.get().ALLOW_FPV_INSIDE_TUBE.get())) {
 
             if (DetachedCameraController.get().isDetached()) {
-                renderViewEntity.setYRot(DetachedCameraController.get().getYaw());
-                renderViewEntity.setXRot(DetachedCameraController.get().getPitch());
+                renderViewEntity.setYaw(DetachedCameraController.get().getYaw());
+                renderViewEntity.setPitch(DetachedCameraController.get().getPitch());
             }
             DetachedCameraController.get().setDetached(false);
             return;
         }
 
         if (!ClientConfig.get().ALLOW_FPV_INSIDE_TUBE.get()){
-            options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            options.setPerspective(Perspective.THIRD_PERSON_BACK);
         }
 
         Camera cameraObj = (Camera) (Object) this;
@@ -69,13 +69,13 @@ public class CameraMixin {
         camera.callSetRotation(DetachedCameraController.get().getYaw() * (flipped ? -1 : 1), DetachedCameraController.get().getPitch());
 
         camera.callSetPosition(
-                Mth.lerp(PartialTicks, renderViewEntity.xo, renderViewEntity.getX()),
-                Mth.lerp(PartialTicks, renderViewEntity.yo, renderViewEntity.getY()),
-                Mth.lerp(PartialTicks, renderViewEntity.zo, renderViewEntity.getZ()));
+                MathHelper.lerp(PartialTicks, renderViewEntity.prevX, renderViewEntity.getX()),
+                MathHelper.lerp(PartialTicks, renderViewEntity.prevY, renderViewEntity.getY()),
+                MathHelper.lerp(PartialTicks, renderViewEntity.prevZ, renderViewEntity.getZ()));
 
         float f;
         if (renderViewEntity instanceof LivingEntity livingentity) {
-            f = livingentity.getScale();
+            f = livingentity.getScaleFactor();
         } else {
             f = 1.0F;
         }
