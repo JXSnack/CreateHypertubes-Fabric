@@ -1,11 +1,11 @@
 package com.pedrorok.hypertube.utils;
 
-import net.minecraft.core.Direction;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
+import net.minecraft.block.Block;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -14,20 +14,20 @@ import org.jetbrains.annotations.Nullable;
  */
 public class RayCastUtils {
 
-    public static <T extends Block> Direction getDirectionFromHitResult(Player player, @Nullable T filter) {
+    public static <T extends Block> Direction getDirectionFromHitResult(PlayerEntity player, @Nullable T filter) {
         return getDirectionFromHitResult(player, filter, false);
     }
 
-    public static <T extends Block> Direction getDirectionFromHitResult(Player player, @Nullable T filter, boolean ignoreFilter) {
-        HitResult hitResult = player.pick(5, 0, false);
+    public static <T extends Block> Direction getDirectionFromHitResult(PlayerEntity player, @Nullable T filter, boolean ignoreFilter) {
+        HitResult hitResult = player.raycast(5, 0, false);
         if (hitResult.getType() != HitResult.Type.BLOCK) {
-            return player.getDirection().getOpposite();
+            return player.getHorizontalFacing().getOpposite();
         }
         BlockHitResult blockHitResult = (BlockHitResult) hitResult;
-        Level level = player.level();
-        if ((filter != null && !level.getBlockState(blockHitResult.getBlockPos()).is(filter)) || ignoreFilter) {
-            return player.getDirection().getOpposite();
+        World level = player.getWorld();
+        if ((filter != null && !level.getBlockState(blockHitResult.getBlockPos()).isOf(filter)) || ignoreFilter) {
+            return player.getHorizontalFacing().getOpposite();
         }
-        return blockHitResult.getDirection().getOpposite();
+        return blockHitResult.getSide().getOpposite();
     }
 }
