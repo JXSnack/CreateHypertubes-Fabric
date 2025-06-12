@@ -1,7 +1,5 @@
 package com.pedrorok.hypertube.managers.placement;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.pedrorok.hypertube.blocks.HypertubeBlock;
 import com.pedrorok.hypertube.blocks.blockentities.HypertubeBlockEntity;
 import com.pedrorok.hypertube.items.HypertubeItem;
@@ -12,26 +10,28 @@ import com.pedrorok.hypertube.utils.RayCastUtils;
 import com.pedrorok.hypertube.utils.TubeUtils;
 import com.simibubi.create.content.trains.track.TrackBlockOutline;
 import com.simibubi.create.foundation.utility.animation.LerpedFloat;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -45,28 +45,28 @@ public class TubePlacement {
     static LerpedFloat animation = LerpedFloat.linear()
             .startWithValue(0);
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static void clientTick() {
-        LocalPlayer player = Minecraft.getInstance().player;
-        ItemStack stack = player.getMainHandItem();
-        HitResult hitResult = Minecraft.getInstance().hitResult;
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        ItemStack stack = player.getMainHandStack();
+        HitResult hitResult = MinecraftClient.getInstance().crosshairTarget;
 
         if (hitResult == null)
             return;
         if (hitResult.getType() != HitResult.Type.BLOCK)
             return;
 
-        Item tubeItem = ModBlocks.HYPERTUBE.get().asItem();
+        Item tubeItem = ModBlocks.HYPERTUBE.asItem();
         if (!stack.getItem().equals(tubeItem)) {
-            stack = player.getOffhandItem();
+            stack = player.getOffHandStack();
             if (!stack.getItem().equals(tubeItem))
                 return;
         }
 
-        if (!stack.hasFoil())
+        if (!stack.hasGlint())
             return;
 
-        Level level = player.level();
+        World level = player.getWorld();
         BlockHitResult bhr = (BlockHitResult) hitResult;
         BlockPos pos = bhr.getBlockPos();
         BlockState hitState = level.getBlockState(pos);
@@ -74,7 +74,7 @@ public class TubePlacement {
         if (hitState.isAir() || hypertubeHitResult) {
             hoveringPos = pos;
         } else {
-            pos = pos.relative(bhr.getDirection());
+            pos = pos.offset(bhr.getSide());
         }
 
         SimpleConnection connectionFrom = ModDataComponent.decodeSimpleConnection(stack);
@@ -116,15 +116,15 @@ public class TubePlacement {
         MessageUtils.sendActionMessage(player, "");
     }
 
-    public static boolean handleHypertubeClicked(HypertubeBlockEntity tubeEntity, Player player, SimpleConnection simpleConnection, BlockPos pos, Direction direction, Level level, ItemStack stack) {
+    public static boolean handleHypertubeClicked(HypertubeBlockEntity tubeEntity, PlayerEntity player, SimpleConnection simpleConnection, BlockPos pos, Direction direction, World level, ItemStack stack) {
 
         boolean thisTubeCanConnTo = tubeEntity.getConnectionTo() == null;
         boolean thisTubeCanConnFrom = tubeEntity.getConnectionFrom() == null;
         HypertubeBlockEntity otherBlockEntity = (HypertubeBlockEntity) level.getBlockEntity(simpleConnection.pos());
 
         if (otherBlockEntity == null) {
-            MessageUtils.sendActionMessage(player, Component.translatable("placement.create_hypertube.no_other_tube_found")
-                    .withStyle(ChatFormatting.RED));
+            MessageUtils.sendActionMessage(player, Text.translatable("placement.create_hypertube.no_other_tube_found")
+                    .styled(style -> style.withColor(Formatting.RED)));
             return false;
         }
 
@@ -135,8 +135,8 @@ public class TubePlacement {
 
         if (!usingConnectingTo) {
             if (!thisTubeCanConnTo || !otherTubeCanConnFrom) {
-                MessageUtils.sendActionMessage(player, Component.translatable("placement.create_hypertube.cant_conn_tubes")
-                        .withStyle(ChatFormatting.RED));
+                MessageUtils.sendActionMessage(player, Text.translatable("placement.create_hypertube.cant_conn_tubes")
+                        .styled(style -> style.withColor(Formatting.RED)));
                 return false;
             }
         }
@@ -158,12 +158,12 @@ public class TubePlacement {
         }
 
         if (!validation.valid()) {
-            MessageUtils.sendActionMessage(player, validation.getMessageComponent().withStyle(ChatFormatting.RED), true);
+            MessageUtils.sendActionMessage(player, validation.getMessageComponent().styled(style -> style.withColor(Formatting.RED)), true);
             return false;
         }
         TubeUtils.checkSurvivalItems(player, (int) connection.distance(), false);
 
-        if (level.isClientSide) {
+        if (level.isClient) {
             connection.drawPath(LerpedFloat.linear()
                     .startWithValue(0), true);
         }
@@ -176,49 +176,49 @@ public class TubePlacement {
             otherBlockEntity.setConnectionFrom(connection.getFromPos(), direction);
         }
 
-        MessageUtils.sendActionMessage(player, Component.translatable("placement.create_hypertube.success_conn")
-                .withStyle(ChatFormatting.GREEN), true);
-        player.playSound(SoundEvents.ITEM_FRAME_ADD_ITEM, 1.0f, 1.0f);
+        MessageUtils.sendActionMessage(player, Text.translatable("placement.create_hypertube.success_conn")
+                .styled(style -> style.withColor(Formatting.GREEN)), true);
+        player.playSound(SoundEvents.ENTITY_GLOW_ITEM_FRAME_ADD_ITEM, 1.0f, 1.0f);
 
 
-        HypertubeItem.clearConnection(player.getItemInHand(InteractionHand.MAIN_HAND));
+        HypertubeItem.clearConnection(player.getStackInHand(Hand.MAIN_HAND));
         return true;
     }
 
     // SERVER BLOCK VALIDATION
-    public static void tickPlayerServer(@NotNull Player player) {
-        if (player.tickCount % 20 != 0) return;
-        ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
-        Level level = player.level();
+    public static void tickPlayerServer(@NotNull PlayerEntity player) {
+        if (player.age % 20 != 0) return;
+        ItemStack itemInHand = player.getStackInHand(Hand.MAIN_HAND);
+        World level = player.getWorld();
         if (!(itemInHand.getItem() instanceof HypertubeItem)) return;
-        if (!itemInHand.hasFoil()) return;
+        if (!itemInHand.hasGlint()) return;
         SimpleConnection connection = ModDataComponent.decodeSimpleConnection(itemInHand);
         if (connection == null) return;
         if (!(level.getBlockEntity(new BlockPos(connection.pos())) instanceof HypertubeBlockEntity)) {
             HypertubeItem.clearConnection(itemInHand);
             MessageUtils.sendActionMessage(player,
-                    Component.translatable("placement.create_hypertube.conn_cleared_invalid_block").withStyle(ChatFormatting.RED)
+                    Text.translatable("placement.create_hypertube.conn_cleared_invalid_block").styled(style -> style.withColor(Formatting.RED))
             );
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public static void drawCustomBlockSelection(PoseStack ms, MultiBufferSource buffer, Vec3 camera) {
-        ItemStack mainHandItem = Minecraft.getInstance().player.getMainHandItem();
-        if (!mainHandItem.is(ModBlocks.HYPERTUBE.get().asItem())) return;
-        if (!mainHandItem.hasFoil()) return;
+    @Environment(EnvType.CLIENT)
+    public static void drawCustomBlockSelection(MatrixStack ms, VertexConsumerProvider buffer, Vec3d camera) {
+        ItemStack mainHandItem = MinecraftClient.getInstance().player.getMainHandStack();
+        if (!mainHandItem.isOf(ModBlocks.HYPERTUBE.asItem())) return;
+        if (!mainHandItem.hasGlint()) return;
         SimpleConnection connection = ModDataComponent.decodeSimpleConnection(mainHandItem);
         if (connection == null) return;
 
-        Minecraft mc = Minecraft.getInstance();
-        BlockState blockState = mc.level.getBlockState(connection.pos());
+        MinecraftClient mc = MinecraftClient.getInstance();
+        BlockState blockState = mc.world.getBlockState(connection.pos());
         if (!(blockState.getBlock() instanceof HypertubeBlock)) return;
         HypertubeBlock block = (HypertubeBlock) blockState.getBlock();
 
-        VertexConsumer vb = buffer.getBuffer(RenderType.lines());
-        ms.pushPose();
+        VertexConsumer vb = buffer.getBuffer(RenderLayer.getLines());
+        ms.push();
         ms.translate(connection.pos().getX() - camera.x, connection.pos().getY() - camera.y, connection.pos().getZ() - camera.z);
         TrackBlockOutline.renderShape(block.getShape(blockState), ms, vb, canPlace);
-        ms.popPose();
+        ms.pop();
     }
 }
