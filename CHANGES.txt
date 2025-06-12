@@ -17,3 +17,8 @@ or file rewrites.
 
 # Little Logic Changes
 - The build file's name is now "hypertubes-fabric-(version)-build.(build num).jar"
+
+# TODO
+This is stuff that is still needed to do.
+
+- Implement Cardinal Components API (CCA) to replace all the getPersistentData stuff
