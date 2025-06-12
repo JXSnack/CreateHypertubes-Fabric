@@ -12,12 +12,11 @@
     "icon": "assets/${mod_id}/icon.png",
     "environment": "*",
     "entrypoints": {
-        "main": [
-            "com.example.modid.ExampleMod"
-        ]
+        "main": ["com.pedrorok.hypertube.HypertubeMod"],
+        "client": ["com.pedrorok.hypertube.HypertubeModClient"]
     },
     "mixins": [
-        "${mod_id}.mixins.json"
+        "create_hypertube.mixins.json"
     ],
     "depends": {
         "fabricloader": ">=${loader_version}",
