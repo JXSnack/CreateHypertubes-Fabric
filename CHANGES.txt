@@ -14,9 +14,13 @@ or file rewrites.
 - Added HypertubeMod.id(String) for convenience
 - Added PlayerEntityRendererMixin to emulate the forge PlayerRenderEvent.Pre and Post
 - Added HypertubeModClient to handle Fabric client stuff
+- Added getBlockPos to HypertubeBlockEntity
 
 # Refactors
 - Moved icon file into the mod's specific assets for better compatibility
+
+# Removals
+- Removed onDataPacket, Fabric does this automatically
 
 # Little Logic Changes
 - The build file's name is now "hypertubes-fabric-(version)-build.(build num).jar"
