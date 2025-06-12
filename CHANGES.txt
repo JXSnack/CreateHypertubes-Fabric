@@ -11,12 +11,15 @@ or file rewrites.
 
 # Additions
 - Added fabric.mod.json
+- Added HypertubeMod.id(String) for convenience
 
 # Refactors
 - Moved icon file into the mod's specific assets for better compatibility
 
 # Little Logic Changes
 - The build file's name is now "hypertubes-fabric-(version)-build.(build num).jar"
+- All deferred registry stuffs will have significant changes to the way they are accessed/registered, due to Fabric
+using a different registry system
 
 # TODO
 This is stuff that is still needed to do.
