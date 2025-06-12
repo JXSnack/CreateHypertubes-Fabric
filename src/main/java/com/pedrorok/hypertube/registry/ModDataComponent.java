@@ -1,12 +1,9 @@
 package com.pedrorok.hypertube.registry;
 
 import com.pedrorok.hypertube.managers.placement.SimpleConnection;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 23/04/2025
