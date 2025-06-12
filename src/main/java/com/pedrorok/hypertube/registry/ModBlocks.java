@@ -6,9 +6,9 @@ import com.pedrorok.hypertube.blocks.HypertubeBlock;
 import com.pedrorok.hypertube.items.HypertubeItem;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntry;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.block.AbstractBlock;
+import net.minecraft.item.BlockItem;
+import net.minecraft.sound.BlockSoundGroup;
 
 import static com.simibubi.create.foundation.data.ModelGen.customItemModel;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
@@ -20,13 +20,13 @@ import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
  */
 public class ModBlocks {
 
-    public static final BlockBehaviour.Properties PROPERTIES = BlockBehaviour.Properties.of()
-            .destroyTime(1.0f)
-            .explosionResistance(10.0f)
-            .sound(SoundType.METAL)
-            .noOcclusion()
-            .isViewBlocking((state, level, pos) -> false)
-            .isSuffocating((state, level, pos) -> false);
+    public static final AbstractBlock.Settings PROPERTIES = AbstractBlock.Settings.create()
+            .hardness(1.0f)
+            .resistance(10.0f)
+            .sounds(BlockSoundGroup.METAL)
+            .nonOpaque()
+            .blockVision((state, level, pos) -> false)
+            .suffocates((state, level, pos) -> false);
 
     private static final CreateRegistrate REGISTRATE = HypertubeMod.get();
 
