@@ -3,8 +3,8 @@ plugins {
     id 'maven-publish'
 }
 
-base.archivesName = archives_base_name
-group = project.maven_group
+base.archivesName = mod_id
+group = project.mod_group_id
 
 // Formats the mod version to include the Minecraft version and build number (if present)
 String buildNumber = System.getenv("GITHUB_RUN_NUMBER")
