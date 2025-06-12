@@ -1,8 +1,8 @@
 package com.pedrorok.hypertube.managers.placement;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 27/05/2025
@@ -24,12 +24,12 @@ public record ResponseDTO(boolean valid, String errorMessage) {
         return new ResponseDTO(false, "");
     }
 
-    public MutableComponent getMessageComponent() {
+    public MutableText getMessageComponent() {
         if (errorMessage.isEmpty()) {
-            return Component.empty();
+            return Text.empty();
         }
-        MutableComponent translatable = Component.translatable(errorMessage);
+        MutableText translatable = Text.translatable(errorMessage);
         if (valid) return translatable;
-        return translatable.withStyle(ChatFormatting.RED);
+        return translatable.styled(style -> style.withColor(Formatting.RED));
     }
 }
