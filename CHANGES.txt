@@ -20,6 +20,8 @@ or file rewrites.
 - The build file's name is now "hypertubes-fabric-(version)-build.(build num).jar"
 - All deferred registry stuffs will have significant changes to the way they are accessed/registered, due to Fabric
 using a different registry system
+- All chat color things (withStyle) have been replaced with .styled(style -> style.(whatever)), since Fabric does not
+inherently have such method
 
 # TODO
 This is stuff that is still needed to do.
