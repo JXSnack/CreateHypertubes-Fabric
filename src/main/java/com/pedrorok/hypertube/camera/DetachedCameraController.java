@@ -3,19 +3,19 @@ package com.pedrorok.hypertube.camera;
 import com.pedrorok.hypertube.config.ClientConfig;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHandler;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Mouse;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 22/04/2025
  * @project Create Hypertube
  */
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class DetachedCameraController {
 
     private static DetachedCameraController INSTANCE;
@@ -33,9 +33,9 @@ public class DetachedCameraController {
     private float pitch = 0;
 
     @Getter
-    private Vec3 currentPos = Vec3.ZERO;
+    private Vec3d currentPos = Vec3d.ZERO;
 
-    private Vec3 targetPos = Vec3.ZERO;
+    private Vec3d targetPos = Vec3d.ZERO;
     @Getter
     private float targetYaw = 0;
     @Getter
@@ -54,11 +54,11 @@ public class DetachedCameraController {
     }
 
     public void startCamera(Entity renderViewEntity) {
-        Vec3 cameraPos = getRelativeCameraPos(renderViewEntity);
+        Vec3d cameraPos = getRelativeCameraPos(renderViewEntity);
         this.currentPos = cameraPos;
         this.targetPos = cameraPos;
         this.lastMouseMov = 0;
-        this.yaw = this.targetYaw = renderViewEntity.getYRot();
+        this.yaw = this.targetYaw = renderViewEntity.getYaw();
         this.pitch = this.targetPitch = 30;
     }
 
@@ -74,11 +74,11 @@ public class DetachedCameraController {
             lastMouseMov = 2;
         }
 
-        this.targetPitch = Mth.clamp(this.targetPitch, -90, 90);
+        this.targetPitch = MathHelper.clamp(this.targetPitch, -90, 90);
     }
 
-    private float getCameraYaw(Vec3 entityPos, Vec3 cameraPos) {
-        Vec3 cameraToPlayerNormal = cameraPos.subtract(entityPos).multiply(1, 0, 1).normalize();
+    private float getCameraYaw(Vec3d entityPos, Vec3d cameraPos) {
+        Vec3d cameraToPlayerNormal = cameraPos.subtract(entityPos).multiply(1, 0, 1).normalize();
         float yaw = (float) Math.toDegrees(Math.atan2(cameraToPlayerNormal.z, cameraToPlayerNormal.x)) + 90;
         return (((yaw - this.yaw + 540) % 360) - 180) * (1 - Math.min(lastMouseMov, 1));
     }
@@ -88,17 +88,17 @@ public class DetachedCameraController {
         return (((30 - this.pitch + 540) % 360) - 180) * (1 - Math.min(lastMouseMov, 1));
     }
 
-    private Vec3 getRelativeCameraPos(Entity renderViewEntity) {
-        Vec3 deltaMovement = renderViewEntity.getDeltaMovement();
+    private Vec3d getRelativeCameraPos(Entity renderViewEntity) {
+        Vec3d deltaMovement = renderViewEntity.getVelocity();
         return renderViewEntity
-                .position()
+                .getPos()
                 .subtract(deltaMovement.multiply(8, 8, 8))
                 .add(0, 3, 0);
     }
 
     public void tickCamera(Entity renderViewEntity) {
-        Vec3 entityPos = renderViewEntity.position();
-        Vec3 relativeCameraPos = getRelativeCameraPos(renderViewEntity);
+        Vec3d entityPos = renderViewEntity.getPos();
+        Vec3d relativeCameraPos = getRelativeCameraPos(renderViewEntity);
 
         updateCameraRotation(getCameraYaw(entityPos, relativeCameraPos) * 0.1f, getCameraPitch() * 0.1f, false);
 
@@ -106,14 +106,14 @@ public class DetachedCameraController {
         tickCameraPosRot();
     }
 
-    public void updateTargetPosition(Vec3 pos) {
+    public void updateTargetPosition(Vec3d pos) {
         this.targetPos = pos;
     }
 
     public void tickCameraPosRot() {
         this.currentPos = this.currentPos.lerp(this.targetPos, SMOOTHING);
-        this.yaw = (float) Mth.lerp(SMOOTHING_ROTATION, this.yaw, this.targetYaw);
-        this.pitch = (float) Mth.lerp(SMOOTHING_ROTATION, this.pitch, this.targetPitch);
+        this.yaw = (float) MathHelper.lerp(SMOOTHING_ROTATION, this.yaw, this.targetYaw);
+        this.pitch = (float) MathHelper.lerp(SMOOTHING_ROTATION, this.pitch, this.targetPitch);
     }
 
 
@@ -121,21 +121,21 @@ public class DetachedCameraController {
     private static double lastMouseY = 0;
 
     public static void cameraTick() {
-        Minecraft mc = Minecraft.getInstance();
-        if ((mc.options.getCameraType().isFirstPerson() && ClientConfig.get().ALLOW_FPV_INSIDE_TUBE.get())
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if ((mc.options.getPerspective().isFirstPerson() && ClientConfig.get().ALLOW_FPV_INSIDE_TUBE.get())
             || mc.isPaused()
-            || !mc.isWindowActive())
+            || !mc.isWindowFocused())
             return;
 
-        MouseHandler mouse = mc.mouseHandler;
-        double dx = mouse.xpos() - lastMouseX;
-        double dy = mouse.ypos() - lastMouseY;
+        Mouse mouse = mc.mouse;
+        double dx = mouse.getX() - lastMouseX;
+        double dy = mouse.getY() - lastMouseY;
 
-        double sensitivity = mc.options.sensitivity().get();
+        double sensitivity = mc.options.getMouseSensitivity().getValue();
         double factor = sensitivity * 0.3 + 0.1;
         factor = factor * factor * factor * 8.0;
         DetachedCameraController.get().updateCameraRotation((float) (dx * factor), (float) (dy * factor), true);
-        lastMouseX = mc.mouseHandler.xpos();
-        lastMouseY = mc.mouseHandler.ypos();
+        lastMouseX = mc.mouse.getX();
+        lastMouseY = mc.mouse.getY();
     }
 }
