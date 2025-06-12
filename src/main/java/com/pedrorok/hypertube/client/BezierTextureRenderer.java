@@ -1,23 +1,21 @@
 package com.pedrorok.hypertube.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.pedrorok.hypertube.HypertubeMod;
 import com.pedrorok.hypertube.blocks.IBezierProvider;
 import com.pedrorok.hypertube.blocks.blockentities.HypertubeBlockEntity;
 import com.pedrorok.hypertube.managers.placement.BezierConnection;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.block.entity.BlockEntityRenderer;
+import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -27,7 +25,7 @@ import java.util.List;
  * @author Rok, Pedro Lucas nmm. Created on 22/05/2025
  * @project Create Hypertube
  */
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class BezierTextureRenderer<T extends IBezierProvider> implements BlockEntityRenderer<HypertubeBlockEntity> {
 
     private static final float TUBE_RADIUS = 0.7F;
@@ -36,16 +34,16 @@ public class BezierTextureRenderer<T extends IBezierProvider> implements BlockEn
 
     private static final float TILING_UNIT = 1f;
 
-    private final BlockEntityRendererProvider.Context context;
-    private final ResourceLocation textureLocation;
+    private final BlockEntityRendererFactory.Context context;
+    private final Identifier textureLocation;
 
-    public BezierTextureRenderer(BlockEntityRendererProvider.Context context) {
+    public BezierTextureRenderer(BlockEntityRendererFactory.Context context) {
         this.context = context;
-        this.textureLocation = new ResourceLocation(HypertubeMod.MOD_ID, "textures/block/entity_tube_base.png");
+        this.textureLocation = new Identifier(HypertubeMod.MOD_ID, "textures/block/entity_tube_base.png");
     }
 
     @Override
-    public void render(HypertubeBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource,
+    public void render(HypertubeBlockEntity blockEntity, float partialTick, MatrixStack poseStack, VertexConsumerProvider bufferSource,
                        int packedLight, int packedOverlay) {
         BezierConnection connection = blockEntity.getBezierConnection();
 
@@ -53,41 +51,41 @@ public class BezierTextureRenderer<T extends IBezierProvider> implements BlockEn
             return;
         }
 
-        List<Vec3> bezierPoints = connection.getBezierPoints();
+        List<Vec3d> bezierPoints = connection.getBezierPoints();
         if (bezierPoints.size() < 2) {
             return;
         }
 
-        poseStack.pushPose();
-        Vec3 blockPos = Vec3.atLowerCornerOf(blockEntity.getBlockPos());
+        poseStack.push();
+        Vec3d blockPos = Vec3d.of(blockEntity.getBlockPos());
         poseStack.translate(-blockPos.x, -blockPos.y, -blockPos.z);
 
-        Matrix4f pose = poseStack.last().pose();
-        Level level = blockEntity.getLevel();
+        Matrix4f pose = poseStack.peek().getPositionMatrix();
+        World level = blockEntity.getWorld();
 
-        VertexConsumer builderExterior = bufferSource.getBuffer(RenderType.entityTranslucentCull(textureLocation));
+        VertexConsumer builderExterior = bufferSource.getBuffer(RenderLayer.getEntityTranslucentCull(textureLocation));
         renderTubeSegments(bezierPoints, builderExterior, pose, level, packedLight, packedOverlay, false);
 
-        VertexConsumer builderInterior = bufferSource.getBuffer(RenderType.entityTranslucent(textureLocation));
+        VertexConsumer builderInterior = bufferSource.getBuffer(RenderLayer.getEntityTranslucent(textureLocation));
         renderTubeSegments(bezierPoints, builderInterior, pose, level, packedLight, packedOverlay, true);
 
-        poseStack.popPose();
+        poseStack.pop();
     }
 
-    private void renderTubeSegments(List<Vec3> points, VertexConsumer builder, Matrix4f pose, Level level, int packedLight, int packedOverlay, boolean isInterior) {
+    private void renderTubeSegments(List<Vec3d> points, VertexConsumer builder, Matrix4f pose, World level, int packedLight, int packedOverlay, boolean isInterior) {
         float currentDistance = 0;
         float radius = isInterior ? INNER_TUBE_RADIUS : TUBE_RADIUS;
 
         for (int i = 0; i < points.size() - 1; i++) {
-            Vec3 current = points.get(i);
-            Vec3 next = points.get(i + 1);
+            Vec3d current = points.get(i);
+            Vec3d next = points.get(i + 1);
 
-            Vec3 direction = next.subtract(current);
+            Vec3d direction = next.subtract(current);
             float segmentLength = (float) direction.length();
 
             if (segmentLength < 0.001f) continue;
 
-            Vec3 dirNormalized = direction.normalize();
+            Vec3d dirNormalized = direction.normalize();
 
             Vector3f dirVector = new Vector3f((float) dirNormalized.x, (float) dirNormalized.y, (float) dirNormalized.z);
             Vector3f perpA = findPerpendicularVector(dirVector);
@@ -125,7 +123,7 @@ public class BezierTextureRenderer<T extends IBezierProvider> implements BlockEn
     }
 
     private void addVertex(VertexConsumer builder, Matrix4f pose,
-                           Vec3 pos, Vector3f offset, float u, float v, int light, int overlay, boolean invertLight) {
+                           Vec3d pos, Vector3f offset, float u, float v, int light, int overlay, boolean invertLight) {
         float x = (float) pos.x + offset.x;
         float y = (float) pos.y + offset.y;
         float z = (float) pos.z + offset.z;
@@ -140,11 +138,11 @@ public class BezierTextureRenderer<T extends IBezierProvider> implements BlockEn
 
         builder.vertex(pose, x, y, z)
                 .color(255, 255, 255, 255)
-                .uv(u, v)
-                .overlayCoords(overlay)
-                .uv2(light & 0xFFFF, light >> 16)
+                .texture(u, v)
+                .overlay(overlay)
+                .light(light & 0xFFFF, light >> 16)
                 .normal(nx, ny, nz)
-                .endVertex();
+                .next();
     }
 
     private Vector3f findPerpendicularVector(Vector3f vec) {
@@ -165,9 +163,9 @@ public class BezierTextureRenderer<T extends IBezierProvider> implements BlockEn
 
     private Vector3f getOffset(Vector3f perpA, Vector3f perpB, float angle, float radius) {
         return new Vector3f(
-                (Mth.cos(angle) * perpA.x + Mth.sin(angle) * perpB.x) * radius,
-                (Mth.cos(angle) * perpA.y + Mth.sin(angle) * perpB.y) * radius,
-                (Mth.cos(angle) * perpA.z + Mth.sin(angle) * perpB.z) * radius
+                (MathHelper.cos(angle) * perpA.x + MathHelper.sin(angle) * perpB.x) * radius,
+                (MathHelper.cos(angle) * perpA.y + MathHelper.sin(angle) * perpB.y) * radius,
+                (MathHelper.cos(angle) * perpA.z + MathHelper.sin(angle) * perpB.z) * radius
         );
     }
 
@@ -180,12 +178,12 @@ public class BezierTextureRenderer<T extends IBezierProvider> implements BlockEn
     }*/
 
     @Override
-    public boolean shouldRenderOffScreen(HypertubeBlockEntity blockEntity) {
+    public boolean rendersOutsideBoundingBox(HypertubeBlockEntity blockEntity) {
         return true;
     }
 
     @Override
-    public boolean shouldRender(HypertubeBlockEntity p_173568_, Vec3 p_173569_) {
+    public boolean isInRenderDistance(HypertubeBlockEntity p_173568_, Vec3d p_173569_) {
         return true;
     }
 
