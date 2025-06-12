@@ -1,12 +1,10 @@
 package com.pedrorok.hypertube.registry;
 
 import com.pedrorok.hypertube.HypertubeMod;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 26/05/2025
@@ -14,17 +12,19 @@ import net.minecraftforge.registries.RegistryObject;
  */
 public class ModSounds {
 
-    public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(Registries.SOUND_EVENT, HypertubeMod.MOD_ID);
+    public static final SoundEvent HYPERTUBE_SUCTION = register("suction");
+    public static final SoundEvent TRAVELING = register("traveling");
 
+    public static void register() {}
 
-    public static final RegistryObject<SoundEvent> HYPERTUBE_SUCTION = SOUNDS.register("suction",
-            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(HypertubeMod.MOD_ID, "suction")));
-
-    public static final RegistryObject<SoundEvent> TRAVELING = SOUNDS.register("traveling",
-            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(HypertubeMod.MOD_ID, "traveling")));
-
-    public static void register(IEventBus eventBus) {
-        SOUNDS.register(eventBus);
+    // FABRIC ONLY, replacement for Forge's DeferredRegister and whatnot
+    public static SoundEvent register(String name) {
+        Identifier id = HypertubeMod.id(name);
+        return Registry.register(
+                Registries.SOUND_EVENT,
+                id,
+                SoundEvent.of(id)
+        );
     }
 
 }
