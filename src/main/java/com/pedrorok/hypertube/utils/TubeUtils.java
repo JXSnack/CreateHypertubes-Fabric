@@ -9,7 +9,16 @@ import com.pedrorok.hypertube.registry.ModBlocks;
 import com.pedrorok.hypertube.registry.ModDataComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.World;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -27,7 +36,7 @@ import java.util.List;
 public class TubeUtils {
 
 
-    public static ResponseDTO checkClickedHypertube(Level level, BlockPos pos, Direction direction) {
+    public static ResponseDTO checkClickedHypertube(World level, BlockPos pos, Direction direction) {
         if (level.getBlockEntity(pos) instanceof HypertubeBlockEntity tubeEntity
             && !tubeEntity.getFacesConnectable().contains(direction)) {
             return ResponseDTO.invalid("placement.create_hypertube.cant_conn_to_face");
@@ -35,13 +44,13 @@ public class TubeUtils {
         return ResponseDTO.get(true);
     }
 
-    public static boolean checkPlayerPlacingBlock(@NotNull Player player, Level level, BlockPos pos) {
+    public static boolean checkPlayerPlacingBlock(@NotNull PlayerEntity player, World level, BlockPos pos) {
 
-        ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
+        ItemStack itemInHand = player.getStackInHand(Hand.MAIN_HAND);
         if (itemInHand.getItem() != ModBlocks.HYPERTUBE.asItem()) {
             return true;
         }
-        if (!itemInHand.hasFoil()) {
+        if (!itemInHand.hasGlint()) {
             return true;
         }
 
@@ -54,7 +63,7 @@ public class TubeUtils {
         return checkPlayerPlacingBlockValidation(player, bezierConnection, level);
     }
 
-    public static boolean checkPlayerPlacingBlockValidation(Player player, @NotNull BezierConnection bezierConnection, Level level) {
+    public static boolean checkPlayerPlacingBlockValidation(PlayerEntity player, @NotNull BezierConnection bezierConnection, World level) {
         ResponseDTO validation = bezierConnection.getValidation();
         if (validation.valid()) {
             validation = checkSurvivalItems(player, (int) bezierConnection.distance(), true);
@@ -68,7 +77,7 @@ public class TubeUtils {
             MessageUtils.sendActionMessage(player, validation.getMessageComponent());
             return false;
         }
-        HypertubeItem.clearConnection(player.getItemInHand(InteractionHand.MAIN_HAND));
+        HypertubeItem.clearConnection(player.getStackInHand(Hand.MAIN_HAND));
 
         checkSurvivalItems(player, (int) bezierConnection.distance() + 1, false);
         return true;
@@ -77,13 +86,13 @@ public class TubeUtils {
 
     private static final float CHECK_DISTANCE_THRESHOLD = 0.4f;
 
-    public static ResponseDTO checkBlockCollision(@NotNull Level level, @NotNull BezierConnection bezierConnection) {
-        List<Vec3> positions = new ArrayList<>(bezierConnection.getBezierPoints());
+    public static ResponseDTO checkBlockCollision(@NotNull World level, @NotNull BezierConnection bezierConnection) {
+        List<Vec3d> positions = new ArrayList<>(bezierConnection.getBezierPoints());
         positions.remove(positions.size() -1);
         positions.remove(0);
 
         for (int i = 1; i < positions.size() - 1; i++) {
-            Vec3 pos = positions.get(i);
+            Vec3d pos = positions.get(i);
             if (hasCollision(level, pos) ||
                 hasCollision(level, pos.add(CHECK_DISTANCE_THRESHOLD, 0, 0)) ||
                 hasCollision(level, pos.add(0, 0, CHECK_DISTANCE_THRESHOLD)) ||
@@ -97,17 +106,17 @@ public class TubeUtils {
         return ResponseDTO.get(true);
     }
 
-    private static boolean hasCollision(Level level, Vec3 pos) {
-        BlockPos blockPos = BlockPos.containing(pos);
+    private static boolean hasCollision(World level, Vec3d pos) {
+        BlockPos blockPos = BlockPos.ofFloored(pos);
         boolean hasCollision = !level.getBlockState(blockPos).getCollisionShape(level, blockPos).isEmpty();
-        if (hasCollision && level.isClientSide) {
+        if (hasCollision && level.isClient) {
             BezierConnection.outlineBlocks(blockPos);
         }
         return hasCollision;
     }
 
 
-    public static ResponseDTO checkSurvivalItems(@NotNull Player player, int neededTubes, boolean simulate) {
+    public static ResponseDTO checkSurvivalItems(@NotNull PlayerEntity player, int neededTubes, boolean simulate) {
         if (!player.isCreative()
             && !checkPlayerInventory(player, neededTubes, simulate)) {
             return ResponseDTO.invalid("placement.create_hypertube.no_enough_tubes");
@@ -115,23 +124,23 @@ public class TubeUtils {
         return ResponseDTO.get(true);
     }
 
-    private static boolean checkPlayerInventory(@NotNull Player player, int neededTubes, boolean simulate) {
+    private static boolean checkPlayerInventory(@NotNull PlayerEntity player, int neededTubes, boolean simulate) {
         int foundTubes = 0;
 
-        Inventory inv = player.getInventory();
-        int size = inv.items.size();
+        PlayerInventory inv = player.getInventory();
+        int size = inv.size();
         for (int j = 0; j <= size + 1; j++) {
             int i = j;
             boolean offhand = j == size + 1;
             if (j == size)
-                i = inv.selected;
+                i = inv.selectedSlot;
             else if (offhand)
                 i = 0;
-            else if (j == inv.selected)
+            else if (j == inv.selectedSlot)
                 continue;
 
-            ItemStack stackInSlot = (offhand ? inv.offhand : inv.items).get(i);
-            boolean isTube = ModBlocks.HYPERTUBE.asStack().is(stackInSlot.getItem());
+            ItemStack stackInSlot = (offhand ? inv.offHand : inv.main).get(i);
+            boolean isTube = ModBlocks.HYPERTUBE.asStack().isOf(stackInSlot.getItem());
             if (!isTube)
                 continue;
             if (foundTubes >= neededTubes)
@@ -144,9 +153,9 @@ public class TubeUtils {
                         count - Math.min(neededTubes - foundTubes, count);
                 ItemStack newItem = stackInSlot.copyWithCount(remainingItems);
                 if (offhand)
-                    player.setItemInHand(InteractionHand.OFF_HAND, newItem);
+                    player.setStackInHand(Hand.OFF_HAND, newItem);
                 else
-                    inv.setItem(i, newItem);
+                    inv.setStack(i, newItem);
             }
 
             foundTubes += count;
