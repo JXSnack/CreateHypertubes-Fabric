@@ -1,7 +1,6 @@
 package com.pedrorok.hypertube.managers;
 
 
-import com.pedrorok.hypertube.blocks.HyperEntranceBlock;
 import com.pedrorok.hypertube.blocks.HypertubeBlock;
 import com.pedrorok.hypertube.blocks.TubeConnection;
 import com.pedrorok.hypertube.blocks.blockentities.HypertubeBlockEntity;
@@ -9,13 +8,13 @@ import com.pedrorok.hypertube.managers.placement.BezierConnection;
 import com.pedrorok.hypertube.managers.placement.SimpleConnection;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,7 +28,7 @@ import java.util.UUID;
 public class TravelData {
 
     @Getter
-    private final List<Vec3> travelPoints;
+    private final List<Vec3d> travelPoints;
     private final List<UUID> bezierConnections;
     private final List<BlockPos> blockConnections;
     @Getter
@@ -39,26 +38,26 @@ public class TravelData {
 
     @Setter
     @Getter
-    private Vec3 lastDir;
+    private Vec3d lastDir;
 
     @Getter
     @Setter
     private boolean isFinished = false;
 
-    public TravelData(BlockPos firstPipe, Level level, BlockPos entrancePos, float speed) {
+    public TravelData(BlockPos firstPipe, World level, BlockPos entrancePos, float speed) {
         this.travelPoints = new ArrayList<>();
         this.bezierConnections = new ArrayList<>();
         this.blockConnections = new ArrayList<>();
         this.speed = speed;
-        travelPoints.add(entrancePos.getCenter());
+        travelPoints.add(entrancePos.toCenterPos());
         blockConnections.add(entrancePos);
-        travelPoints.add(firstPipe.getCenter());
+        travelPoints.add(firstPipe.toCenterPos());
         blockConnections.add(firstPipe);
 
         addTravelPoint(firstPipe, level);
     }
 
-    private void addTravelPoint(BlockPos pos, Level level) {
+    private void addTravelPoint(BlockPos pos, World level) {
         BlockState blockState = level.getBlockState(pos);
 
         if (addCurvedTravelPoint(pos, level)) return;
@@ -66,12 +65,12 @@ public class TravelData {
         if (!(block instanceof HypertubeBlock pipeBlock)) return;
         List<Direction> connectedFaces = pipeBlock.getConnectedFaces(blockState);
         for (Direction direction : connectedFaces) {
-            BlockPos nextPipe = pos.relative(direction);
+            BlockPos nextPipe = pos.offset(direction);
             if (blockConnections.contains(nextPipe)) continue;
             if (!(level.getBlockState(nextPipe).getBlock() instanceof TubeConnection connection)) continue;
             if (!connection.canTravelConnect(level, nextPipe, direction)
                 && (level.getBlockEntity(nextPipe) instanceof HypertubeBlockEntity tubeEntity && !tubeEntity.isConnected())) continue;
-            travelPoints.add(nextPipe.getCenter());
+            travelPoints.add(nextPipe.toCenterPos());
             blockConnections.add(nextPipe);
             addTravelPoint(nextPipe, level);
             break;
@@ -79,7 +78,7 @@ public class TravelData {
     }
 
 
-    private boolean addCurvedTravelPoint(BlockPos pos, Level level) {
+    private boolean addCurvedTravelPoint(BlockPos pos, World level) {
         if (!(level.getBlockEntity(pos) instanceof HypertubeBlockEntity hypertubeBlockEntity)) return false;
         BezierConnection connection = hypertubeBlockEntity.getConnectionTo();
         boolean inverse = false;
@@ -99,7 +98,7 @@ public class TravelData {
         }
 
 
-        List<Vec3> bezierPoints = new ArrayList<>(connection.getBezierPoints());
+        List<Vec3d> bezierPoints = new ArrayList<>(connection.getBezierPoints());
         if (inverse) {
             Collections.reverse(bezierPoints);
         }
@@ -119,7 +118,7 @@ public class TravelData {
         return true;
     }
 
-    public Vec3 getTravelPoint() {
+    public Vec3d getTravelPoint() {
         if (travelIndex >= travelPoints.size()) return null;
         return travelPoints.get(travelIndex);
     }
