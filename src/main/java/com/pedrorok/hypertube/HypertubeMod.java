@@ -5,6 +5,7 @@ import com.pedrorok.hypertube.registry.*;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.util.Identifier;
 import net.minecraftforge.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,5 +48,10 @@ public class HypertubeMod implements ModInitializer {
 
     public static CreateRegistrate get() {
         return REGISTRATE;
+    }
+
+    // FABRIC ONLY, added for convenience
+    public static Identifier id(String path) {
+        return new Identifier(MOD_ID, path);
     }
 }
