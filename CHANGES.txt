@@ -1,0 +1,19 @@
+All changes from Forge to Fabric
+We do not document class name changes or the Forge config API changes. This file should be mainly about logic changes
+or file rewrites.
+
+# Rewrites
+- Replaced gradle/wrapper/gradle-wrapper.jar and its properties to the Fabric wrapper
+- Replaced the gradlew and gradlew.bat with the ones from the Fabric template mod
+- Rewrote the entirety of build.gradle
+- Rewrote the entirety of gradle.properties
+- Rewrote the entirety of settings.gradle
+
+# Additions
+- Added fabric.mod.json
+
+# Refactors
+- Moved icon file into the mod's specific assets for better compatibility
+
+# Little Logic Changes
+- The build file's name is now "hypertubes-fabric-(version)-build.(build num).jar"
