@@ -1,38 +1,36 @@
 package com.pedrorok.hypertube.mixin;
 
 import com.pedrorok.hypertube.managers.TravelManager;
-import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 22/04/2025
  * @project Create Hypertube
  */
-@Mixin(Player.class)
+@Mixin(PlayerEntity.class)
 public abstract class PlayerMovementMixin {
 
     @Inject(method = "tick", at = @At("TAIL"))
     private void onTick(CallbackInfo ci) {
-        Player player = (Player) (Object) this;
+        PlayerEntity player = (PlayerEntity) (Object) this;
 
         if (!player.getPersistentData().getBoolean(TravelManager.TRAVEL_TAG)) return;
 
-        Vec3 velocity = new Vec3(player.getDeltaMovement().x, player.getDeltaMovement().y, player.getDeltaMovement().z);
+        Vec3d velocity = new Vec3d(player.getVelocity().x, player.getVelocity().y, player.getVelocity().z);
 
-        if (!(velocity.lengthSqr() > 0.001D)) return;
-        Vec3 lastMovementDirection = velocity.normalize();
+        if (!(velocity.lengthSquared() > 0.001D)) return;
+        Vec3d lastMovementDirection = velocity.normalize();
 
         float yaw = (float) Math.toDegrees(Math.atan2(-lastMovementDirection.x, lastMovementDirection.z));
         float pitch = (float) Math.toDegrees(Math.atan2(-lastMovementDirection.y, Math.sqrt(lastMovementDirection.x * lastMovementDirection.x + lastMovementDirection.z * lastMovementDirection.z)));
 
-        player.setYRot(yaw);
-        player.setXRot(pitch);
+        player.setYaw(yaw);
+        player.setPitch(pitch);
     }
 
     /*@Inject(method = "canPlayerFitWithinBlocksAndEntitiesWhen", at = @At("HEAD"), cancellable = true)
