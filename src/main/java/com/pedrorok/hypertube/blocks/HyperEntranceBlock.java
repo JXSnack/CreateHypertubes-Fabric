@@ -6,28 +6,27 @@ import com.pedrorok.hypertube.registry.ModBlockEntities;
 import com.pedrorok.hypertube.utils.VoxelUtils;
 import com.simibubi.create.content.kinetics.base.KineticBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.ICogWheel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.*;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.block.*;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemUsageContext;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.BooleanProperty;
+import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.state.property.Properties;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.BlockMirror;
+import net.minecraft.util.BlockRotation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.world.BlockView;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldAccess;
+import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,95 +34,95 @@ import org.jetbrains.annotations.Nullable;
  * @author Rok, Pedro Lucas nmm. Created on 21/04/2025
  * @project Create Hypertube
  */
-public class HyperEntranceBlock extends KineticBlock implements EntityBlock, ICogWheel, TubeConnection {
+public class HyperEntranceBlock extends KineticBlock implements BlockEntityProvider, ICogWheel, TubeConnection {
 
-    public static final DirectionProperty FACING = BlockStateProperties.FACING;
-    public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
+    public static final DirectionProperty FACING = Properties.FACING;
+    public static final BooleanProperty OPEN = Properties.OPEN;
 
-    private static final VoxelShape SHAPE_NORTH = Block.box(0D, 0D, 0D, 16D, 16D, 23D);
-    private static final VoxelShape SHAPE_SOUTH = Block.box(0D, 0D, -7D, 16D, 16D, 16D);
-    private static final VoxelShape SHAPE_EAST = Block.box(-7D, 0D, 0D, 16D, 16D, 16D);
-    private static final VoxelShape SHAPE_WEST = Block.box(0D, 0D, 0D, 23D, 16D, 16D);
-    private static final VoxelShape SHAPE_UP = Block.box(0D, -7D, 0D, 16D, 16D, 16D);
-    private static final VoxelShape SHAPE_DOWN = Block.box(0D, 0D, 0D, 16D, 23D, 16D);
+    private static final VoxelShape SHAPE_NORTH = Block.createCuboidShape(0D, 0D, 0D, 16D, 16D, 23D);
+    private static final VoxelShape SHAPE_SOUTH = Block.createCuboidShape(0D, 0D, -7D, 16D, 16D, 16D);
+    private static final VoxelShape SHAPE_EAST = Block.createCuboidShape(-7D, 0D, 0D, 16D, 16D, 16D);
+    private static final VoxelShape SHAPE_WEST = Block.createCuboidShape(0D, 0D, 0D, 23D, 16D, 16D);
+    private static final VoxelShape SHAPE_UP = Block.createCuboidShape(0D, -7D, 0D, 16D, 16D, 16D);
+    private static final VoxelShape SHAPE_DOWN = Block.createCuboidShape(0D, 0D, 0D, 16D, 23D, 16D);
 
 
-    public HyperEntranceBlock(Properties properties) {
+    public HyperEntranceBlock(Settings properties) {
         super(properties);
-        registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(OPEN, false));
+        setDefaultState(this.stateManager.getDefaultState().with(FACING, Direction.NORTH).with(OPEN, false));
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
         builder.add(FACING);
         builder.add(OPEN);
-        super.createBlockStateDefinition(builder);
+        super.appendProperties(builder);
     }
 
     @Nullable
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Player player = context.getPlayer();
+    public BlockState getPlacementState(ItemPlacementContext context) {
+        PlayerEntity player = context.getPlayer();
         if (player == null) {
-            return this.defaultBlockState().setValue(FACING, context.getClickedFace().getOpposite())
-                    .setValue(OPEN, false);
+            return this.getDefaultState().with(FACING, context.getSide().getOpposite())
+                    .with(OPEN, false);
         }
-        Direction direction = player.getDirection();
-        if (player.getXRot() < -45) {
+        Direction direction = player.getHorizontalFacing();
+        if (player.getPitch() < -45) {
             direction = Direction.UP;
-        } else if (player.getXRot() > 45) {
+        } else if (player.getPitch() > 45) {
             direction = Direction.DOWN;
         }
-        return this.defaultBlockState()
-                .setValue(FACING, direction)
-                .setValue(OPEN, false);
+        return this.getDefaultState()
+                .with(FACING, direction)
+                .with(OPEN, false);
     }
 
     @Override
-    public @NotNull BlockState rotate(BlockState state, Rotation rot) {
-        return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
+    public @NotNull BlockState rotate(BlockState state, BlockRotation rot) {
+        return state.with(FACING, rot.rotate(state.get(FACING)));
     }
 
     @Override
-    public @NotNull BlockState mirror(BlockState state, Mirror mirror) {
-        return state.setValue(FACING, mirror.mirror(state.getValue(FACING)));
+    public @NotNull BlockState mirror(BlockState state, BlockMirror mirror) {
+        return state.with(FACING, mirror.apply(state.get(FACING)));
     }
 
     @Override
-    public boolean hasShaftTowards(LevelReader world, BlockPos pos, BlockState state, Direction face) {
+    public boolean hasShaftTowards(WorldView world, BlockPos pos, BlockState state, Direction face) {
         return false;
     }
 
     @Override
     public Direction.Axis getRotationAxis(BlockState state) {
-        return state.getValue(FACING).getAxis();
+        return state.get(FACING).getAxis();
     }
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(@NotNull BlockPos blockPos, @NotNull BlockState blockState) {
-        return ModBlockEntities.HYPERTUBE_ENTRANCE.get().create(blockPos, blockState);
+    public BlockEntity createBlockEntity(@NotNull BlockPos blockPos, @NotNull BlockState blockState) {
+        return ModBlockEntities.HYPERTUBE_ENTRANCE.create(blockPos, blockState);
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull World level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return (level1, pos, state1, be) -> ((HyperEntranceBlockEntity) be).tick();
     }
 
-    public boolean canTravelConnect(LevelAccessor world, BlockPos pos, Direction facing) {
+    public boolean canTravelConnect(WorldAccess world, BlockPos pos, Direction facing) {
         BlockState state = world.getBlockState(pos);
-        return facing.getOpposite() == state.getValue(FACING)
+        return facing.getOpposite() == state.get(FACING)
                && state.getBlock() instanceof HyperEntranceBlock;
     }
 
-    public VoxelShape getShape(BlockState state, @Nullable CollisionContext ctx) {
-        if (ctx instanceof EntityCollisionContext ecc
+    public VoxelShape getShape(BlockState state, @Nullable ShapeContext ctx) {
+        if (ctx instanceof EntityShapeContext ecc
             && ecc.getEntity() != null
             && ecc.getEntity().getPersistentData().getBoolean(TravelManager.TRAVEL_TAG)) {
             return VoxelUtils.empty();
         }
-        return switch (state.getValue(FACING)) {
+        return switch (state.get(FACING)) {
             case SOUTH -> SHAPE_SOUTH;
             case EAST -> SHAPE_EAST;
             case WEST -> SHAPE_WEST;
@@ -134,28 +133,28 @@ public class HyperEntranceBlock extends KineticBlock implements EntityBlock, ICo
     }
 
     @Override
-    public @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter worldIn, @NotNull BlockPos pos, @NotNull CollisionContext context) {
+    public @NotNull VoxelShape getOutlineShape(@NotNull BlockState state, @NotNull BlockView worldIn, @NotNull BlockPos pos, @NotNull ShapeContext context) {
         return getShape(state, context);
     }
 
     @Override
-    public @NotNull VoxelShape getCollisionShape(@NotNull BlockState state, @NotNull BlockGetter worldIn, @NotNull BlockPos pos, @NotNull CollisionContext context) {
+    public @NotNull VoxelShape getCollisionShape(@NotNull BlockState state, @NotNull BlockView worldIn, @NotNull BlockPos pos, @NotNull ShapeContext context) {
         return getShape(state, context);
     }
 
     @Override
-    public @NotNull VoxelShape getBlockSupportShape(@NotNull BlockState state, @NotNull BlockGetter reader, @NotNull BlockPos pos) {
+    public @NotNull VoxelShape getSidesShape(@NotNull BlockState state, @NotNull BlockView reader, @NotNull BlockPos pos) {
         return getShape(state);
     }
 
     @Override
-    public @NotNull VoxelShape getInteractionShape(@NotNull BlockState state, @NotNull BlockGetter worldIn, @NotNull BlockPos pos) {
+    public @NotNull VoxelShape getRaycastShape(@NotNull BlockState state, @NotNull BlockView worldIn, @NotNull BlockPos pos) {
         return getShape(state);
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
-        return RenderShape.MODEL;
+    public @NotNull BlockRenderType getRenderType(@NotNull BlockState state) {
+        return BlockRenderType.MODEL;
     }
 
     public VoxelShape getShape(BlockState state) {
@@ -168,7 +167,7 @@ public class HyperEntranceBlock extends KineticBlock implements EntityBlock, ICo
     }
 
     @Override
-    public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
+    public ActionResult onSneakWrenched(BlockState state, ItemUsageContext context) {
         return super.onSneakWrenched(state, context);
     }
 }
