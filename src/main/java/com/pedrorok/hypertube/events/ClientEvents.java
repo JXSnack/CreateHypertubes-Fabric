@@ -1,39 +1,29 @@
 package com.pedrorok.hypertube.events;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import com.pedrorok.hypertube.camera.DetachedCameraController;
 import com.pedrorok.hypertube.managers.TravelManager;
 import com.pedrorok.hypertube.managers.placement.TubePlacement;
 import com.pedrorok.hypertube.managers.sound.TubeSoundManager;
 import com.simibubi.create.foundation.render.SuperRenderTypeBuffer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.RotationAxis;
+import net.minecraft.util.math.Vec3d;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 23/04/2025
  * @project Create Hypertube
  */
-@Mod.EventBusSubscriber(Dist.CLIENT)
 public class ClientEvents {
 
-    @SubscribeEvent
-    public static void onTickPre(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) return;
+    public static void onTickPre() {
         onTick(true);
     }
 
-    @SubscribeEvent
-    public static void onTickPost(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    public static void onTickPost() {
         onTick(false);
     }
 
@@ -49,48 +39,38 @@ public class ClientEvents {
     }
 
 
-    @SubscribeEvent
-    public static void onRenderWorld(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
-
-        PoseStack ms = event.getPoseStack();
-        ms.pushPose();
+    public static void onRenderWorld(WorldRenderContext event) {
+        MatrixStack ms = event.matrixStack();
+        ms.push();
         SuperRenderTypeBuffer buffer = SuperRenderTypeBuffer.getInstance();
-        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        Vec3d camera = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
 
         TubePlacement.drawCustomBlockSelection(ms, buffer, camera);
 
         buffer.draw();
         RenderSystem.enableCull();
-        ms.popPose();
+        ms.pop();
     }
 
     protected static boolean isGameActive() {
-        return !(Minecraft.getInstance().level == null || Minecraft.getInstance().player == null);
+        return !(MinecraftClient.getInstance().world == null || MinecraftClient.getInstance().player == null);
     }
 
-    @SubscribeEvent
-    public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
-        Player player = event.getEntity();
+    public static void onRenderPlayer(PlayerEntity player, MatrixStack poseStack) {
         if (!player.getPersistentData().getBoolean(TravelManager.TRAVEL_TAG)) return;
 
-        PoseStack poseStack = event.getPoseStack();
-
-        poseStack.pushPose();
+        poseStack.push();
         poseStack.translate(0, 0.2, 0);
-        poseStack.mulPose(Axis.YP.rotationDegrees(-player.getYRot()));
-        poseStack.mulPose(Axis.XP.rotationDegrees(player.getXRot() + 90));
-        poseStack.mulPose(Axis.YP.rotationDegrees(player.getYRot()));
+        poseStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-player.getYaw()));
+        poseStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(player.getPitch() + 90));
+        poseStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(player.getYaw()));
         poseStack.translate(0, -0.5, 0);
         poseStack.scale(0.8f, 0.8f, 0.8f);
     }
 
-    @SubscribeEvent
-    public static void onRenderPlayerPost(RenderPlayerEvent.Post event) {
-        Player player = event.getEntity();
+    public static void onRenderPlayerPost(PlayerEntity player, MatrixStack poseStack) {
         if (!player.getPersistentData().getBoolean(TravelManager.TRAVEL_TAG)) return;
 
-        event.getPoseStack().popPose();
-
+        poseStack.pop();
     }
 }
