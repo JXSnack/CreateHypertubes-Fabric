@@ -1,7 +1,7 @@
 package com.pedrorok.hypertube.utils;
 
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.text.Text;
 
 /**
  * @author Rok, Pedro Lucas nmm. Created on 27/05/2025
@@ -9,21 +9,21 @@ import net.minecraft.world.entity.player.Player;
  */
 public class MessageUtils {
 
-    public static void sendActionMessage(Player player, Component message) {
+    public static void sendActionMessage(PlayerEntity player, Text message) {
         sendActionMessage(player, message, false);
     }
 
-    public static void sendActionMessage(Player player, Component message, boolean forceStay) {
+    public static void sendActionMessage(PlayerEntity player, Text message, boolean forceStay) {
         if (player.getPersistentData().getLong("last_action_message_stay") > System.currentTimeMillis()) {
             return; // Don't send if the last message is still active
         }
         if (forceStay) {
             player.getPersistentData().putLong("last_action_message_stay", System.currentTimeMillis() + 2000);
         }
-        player.displayClientMessage(message, true);
+        player.sendMessage(message, true);
     }
 
-    public static void sendActionMessage(Player player, String message) {
-        sendActionMessage(player, Component.translatable(message));
+    public static void sendActionMessage(PlayerEntity player, String message) {
+        sendActionMessage(player, Text.translatable(message));
     }
 }
